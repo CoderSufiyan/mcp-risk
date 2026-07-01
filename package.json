@@ -1,0 +1,59 @@
+{
+  "name": "mcp-risk",
+  "version": "0.1.0",
+  "description": "Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.",
+  "type": "module",
+  "bin": {
+    "mcp-risk": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "security",
+    "audit",
+    "ai-safety",
+    "prompt-injection",
+    "cursor",
+    "claude"
+  ],
+  "author": "Sufiyan Khan",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CoderSufiyan/mcp-risk"
+  },
+  "homepage": "https://github.com/CoderSufiyan/mcp-risk",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9"
+  }
+}
