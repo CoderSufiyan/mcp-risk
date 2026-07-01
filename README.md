@@ -11,6 +11,8 @@ MCP servers give AI agents access to files, terminals, browsers, databases, GitH
 
 `mcp-risk` is a local-first scanner for MCP configs. Think `npm audit`, but for agent tools.
 
+![mcp-risk demo](docs/demo.svg)
+
 ```bash
 npx mcp-risk scan ~/.cursor/mcp.json
 ```

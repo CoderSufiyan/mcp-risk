@@ -1,0 +1,35 @@
+<svg width="1040" height="620" viewBox="0 0 1040 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1040" height="620" rx="18" fill="#0B1020"/>
+  <rect x="24" y="24" width="992" height="572" rx="12" fill="#111827" stroke="#263244"/>
+  <circle cx="54" cy="52" r="7" fill="#EF4444"/>
+  <circle cx="78" cy="52" r="7" fill="#F59E0B"/>
+  <circle cx="102" cy="52" r="7" fill="#22C55E"/>
+  <text x="130" y="58" fill="#94A3B8" font-family="Menlo, Consolas, monospace" font-size="15">mcp-risk demo</text>
+
+  <text x="48" y="100" fill="#22C55E" font-family="Menlo, Consolas, monospace" font-size="17">$</text>
+  <text x="72" y="100" fill="#E5E7EB" font-family="Menlo, Consolas, monospace" font-size="17">npx mcp-risk scan examples/risky-mcp.json</text>
+
+  <text x="48" y="145" fill="#F8FAFC" font-family="Menlo, Consolas, monospace" font-size="21" font-weight="700">MCP Risk Audit</text>
+  <text x="48" y="180" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="16">Target: examples/risky-mcp.json</text>
+  <text x="48" y="210" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="16">Score: </text>
+  <text x="112" y="210" fill="#EF4444" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700">F (0/100)</text>
+  <text x="48" y="240" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="16">Findings: 0 critical, 5 high, 2 medium, 0 low</text>
+
+  <rect x="48" y="275" width="54" height="24" rx="4" fill="#7F1D1D"/>
+  <text x="58" y="293" fill="#FEE2E2" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700">HIGH</text>
+  <text x="120" y="293" fill="#F8FAFC" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700">Server starts through a general-purpose interpreter or shell</text>
+  <text x="120" y="323" fill="#94A3B8" font-family="Menlo, Consolas, monospace" font-size="14">server:local-shell</text>
+  <text x="120" y="350" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="14">"local-shell" runs with "bash", which can execute arbitrary code.</text>
+
+  <rect x="48" y="385" width="54" height="24" rx="4" fill="#7F1D1D"/>
+  <text x="58" y="403" fill="#FEE2E2" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700">HIGH</text>
+  <text x="120" y="403" fill="#F8FAFC" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700">Tool description contains prompt-injection language</text>
+  <text x="120" y="433" fill="#94A3B8" font-family="Menlo, Consolas, monospace" font-size="14">server:local-shell.tool:search_docs</text>
+  <text x="120" y="460" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="14">"search_docs" includes instruction override wording.</text>
+
+  <rect x="48" y="495" width="54" height="24" rx="4" fill="#713F12"/>
+  <text x="62" y="513" fill="#FEF3C7" font-family="Menlo, Consolas, monospace" font-size="14" font-weight="700">MED</text>
+  <text x="120" y="513" fill="#F8FAFC" font-family="Menlo, Consolas, monospace" font-size="16" font-weight="700">Server receives sensitive environment variable</text>
+  <text x="120" y="543" fill="#94A3B8" font-family="Menlo, Consolas, monospace" font-size="14">server:local-shell.env.GITHUB_TOKEN</text>
+  <text x="120" y="570" fill="#CBD5E1" font-family="Menlo, Consolas, monospace" font-size="14">A malicious or compromised MCP server could exfiltrate it.</text>
+</svg>
