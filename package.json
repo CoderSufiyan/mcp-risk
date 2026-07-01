@@ -4,7 +4,7 @@
   "description": "Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.",
   "type": "module",
   "bin": {
-    "mcp-risk": "./dist/cli.js"
+    "mcp-risk": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +39,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/CoderSufiyan/mcp-risk"
+    "url": "git+https://github.com/CoderSufiyan/mcp-risk.git"
   },
   "homepage": "https://github.com/CoderSufiyan/mcp-risk",
   "engines": {
