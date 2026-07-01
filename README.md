@@ -1,14 +1,38 @@
 # mcp-risk
 
-> Audit MCP configs for risky tools, secret exposure, and prompt-injection patterns.
+> `npm audit` for MCP configs. Find risky agent tools before you connect them to Claude, Cursor, Cline, Continue, or any MCP client.
 
 [![npm version](https://img.shields.io/npm/v/mcp-risk.svg)](https://www.npmjs.com/package/mcp-risk)
+[![npm downloads](https://img.shields.io/npm/dm/mcp-risk.svg)](https://www.npmjs.com/package/mcp-risk)
 [![CI](https://github.com/CoderSufiyan/mcp-risk/actions/workflows/ci.yml/badge.svg)](https://github.com/CoderSufiyan/mcp-risk/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 MCP servers give AI agents access to files, terminals, browsers, databases, GitHub, Slack, and internal tools. That power is useful, but risky: a malicious or poorly scoped MCP server can expose secrets, run shell commands, or hide prompt-injection instructions inside tool descriptions.
 
 `mcp-risk` is a local-first scanner for MCP configs. Think `npm audit`, but for agent tools.
+
+```bash
+npx mcp-risk scan ~/.cursor/mcp.json
+```
+
+```txt
+MCP Risk Audit
+Target: examples/risky-mcp.json
+Score: F (0/100)
+Findings: 0 critical, 5 high, 2 medium, 0 low
+
+HIGH  Server starts through a general-purpose interpreter or shell
+  server:local-shell
+  "local-shell" runs with "bash", which can execute arbitrary code depending on arguments.
+
+HIGH  Tool description contains prompt-injection language
+  server:local-shell.tool:search_docs
+  "search_docs" includes instruction override wording in its description.
+
+MED   Server receives sensitive environment variable
+  server:local-shell.env.GITHUB_TOKEN
+  "local-shell" receives "GITHUB_TOKEN". A malicious or compromised MCP server could exfiltrate it.
+```
 
 ## Install
 
@@ -56,6 +80,24 @@ JSON output:
 mcp-risk scan . --json
 ```
 
+Use in CI:
+
+```yaml
+name: MCP Risk Audit
+
+on: [push, pull_request]
+
+jobs:
+  mcp-risk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx mcp-risk scan . --fail-on high
+```
+
 ## What it detects
 
 | Risk | Example |
@@ -67,6 +109,20 @@ mcp-risk scan . --json
 | Prompt injection in tool descriptions | "ignore previous instructions", "reveal secrets" |
 | Filesystem tools | read/write/delete file capabilities |
 | Network tools | fetch/browser/scrape/crawl capabilities |
+
+## Why MCP security matters
+
+MCP is becoming the plugin layer for AI agents. That means MCP configs are effectively permission manifests for what an agent can do on your machine.
+
+Before enabling a server, you should know:
+
+- Can it run arbitrary shell commands?
+- Does it receive broad tokens like `GITHUB_TOKEN` or `OPENAI_API_KEY`?
+- Can it read or write files outside your project?
+- Can it fetch untrusted remote content?
+- Do its tool descriptions contain instruction-like text that could steer the agent?
+
+`mcp-risk` gives you a fast local answer before those tools are connected to an agent.
 
 ## Example report
 
@@ -109,9 +165,25 @@ const inline = auditConfig({
 })
 ```
 
-## Why this exists
+## Design goals
 
-AI agents are increasingly extended through MCP. That creates an agent supply-chain problem: tools are installed quickly, but their permissions and descriptions are rarely reviewed. `mcp-risk` gives developers a fast local audit before connecting a server to Cursor, Claude Desktop, Claude Code, Cline, Continue, or any MCP-compatible client.
+- Local-first: config scanning happens on your machine.
+- CI-friendly: text for humans, JSON and exit codes for automation.
+- Practical findings: every warning includes a concrete recommendation.
+- Lightweight: no AI API key required.
+- Client-agnostic: works with Cursor, Claude Desktop, Claude Code, Cline, Continue, and other MCP clients.
+
+## Roadmap
+
+- SARIF output for GitHub code scanning
+- Allowlist policy file for approved servers/tools
+- More client config discovery paths
+- Tool schema analysis for dangerous parameters
+- Optional remote repository audit
+
+## Open source
+
+`mcp-risk` is MIT licensed and open for contributions. Security-focused rules, client config examples, docs fixes, and false-positive reports are welcome.
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "name": "mcp-risk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.",
   "type": "module",
   "bin": {
@@ -33,7 +33,12 @@
     "ai-safety",
     "prompt-injection",
     "cursor",
-    "claude"
+    "claude",
+    "mcp-security",
+    "ai-agent-security",
+    "agent-security",
+    "mcp-server",
+    "mcp-client"
   ],
   "author": "Sufiyan Khan",
   "license": "MIT",
