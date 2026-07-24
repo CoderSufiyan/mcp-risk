@@ -117,5 +117,92 @@ export function scanTool(serverName: string, tool: McpTool): Finding[] {
     })
   }
 
+  findings.push(...scanToolInputSchema(name, tool.inputSchema, location))
+
   return findings
+}
+
+function scanToolInputSchema(toolName: string, inputSchema: unknown, toolLocation: string): Finding[] {
+  const findings: Finding[] = []
+
+  for (const property of schemaProperties(inputSchema)) {
+    const normalizedName = property.name.replace(/[-_]/g, '').toLowerCase()
+    const location = `${toolLocation}.inputSchema.properties.${property.path}`
+
+    if (isUnrestricted(property.schema) && /^(command|cmd|shell|executable)$/.test(normalizedName)) {
+      findings.push({
+        id: 'tool-schema-command-parameter',
+        severity: 'high',
+        title: 'Tool schema accepts an arbitrary command',
+        message: `"${toolName}" accepts an unrestricted "${property.path}" parameter that may execute arbitrary commands.`,
+        location,
+        recommendation: 'Restrict commands to an explicit allowlist and require user confirmation before execution.',
+      })
+    }
+
+    if (isUnrestricted(property.schema) && /(?:path|file|filename|directory|folder|cwd)$/.test(normalizedName)) {
+      findings.push({
+        id: 'tool-schema-path-parameter',
+        severity: 'medium',
+        title: 'Tool schema accepts an arbitrary filesystem path',
+        message: `"${toolName}" accepts an unrestricted "${property.path}" parameter that may access files outside the project.`,
+        location,
+        recommendation: 'Constrain paths to an approved workspace and reject traversal outside that boundary.',
+      })
+    }
+
+    if (isUnrestricted(property.schema) && /(?:url|uri|endpoint)$/.test(normalizedName)) {
+      findings.push({
+        id: 'tool-schema-url-parameter',
+        severity: 'medium',
+        title: 'Tool schema accepts an unrestricted URL',
+        message: `"${toolName}" accepts an unrestricted "${property.path}" parameter that may fetch untrusted remote content.`,
+        location,
+        recommendation: 'Allowlist approved hosts and validate schemes before making network requests.',
+      })
+    }
+
+    if (/^(delete|overwrite|write|force|recursive)$/.test(normalizedName)) {
+      findings.push({
+        id: 'tool-schema-destructive-operation',
+        severity: 'high',
+        title: 'Tool schema exposes a destructive operation control',
+        message: `"${toolName}" accepts a "${property.path}" parameter that can enable destructive writes or deletes.`,
+        location,
+        recommendation: 'Require explicit user confirmation and limit destructive operations to approved resources.',
+      })
+    }
+  }
+
+  return findings
+}
+
+type SchemaProperty = {
+  name: string
+  path: string
+  schema: unknown
+}
+
+function schemaProperties(schema: unknown, path = '', visited = new Set<object>()): SchemaProperty[] {
+  if (!isRecord(schema) || visited.has(schema)) return []
+  visited.add(schema)
+
+  const properties = schema.properties
+  if (!isRecord(properties)) return []
+
+  const result: SchemaProperty[] = []
+  for (const [name, propertySchema] of Object.entries(properties)) {
+    const propertyPath = path ? `${path}.${name}` : name
+    result.push({ name, path: propertyPath, schema: propertySchema })
+    result.push(...schemaProperties(propertySchema, propertyPath, visited))
+  }
+  return result
+}
+
+function isUnrestricted(schema: unknown): boolean {
+  return schema === true || (isRecord(schema) && !Array.isArray(schema.enum) && !Object.hasOwn(schema, 'const'))
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }

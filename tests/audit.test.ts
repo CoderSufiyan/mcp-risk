@@ -71,6 +71,59 @@ describe('auditConfig', () => {
     expect(result.findings.map((finding) => finding.id)).toContain('tool-network-capability')
   })
 
+  it('detects dangerous tool schema parameters', () => {
+    const result = auditConfig({
+      tools: [
+        {
+          name: 'manage_content',
+          description: 'Manage project content',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              command: { type: 'string' },
+              targetPath: { type: 'string' },
+              url: { type: 'string' },
+              delete: { type: 'boolean' },
+              options: {
+                type: 'object',
+                properties: {
+                  overwrite: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    const findings = result.findings
+    expect(findings.map((finding) => finding.id)).toContain('tool-schema-command-parameter')
+    expect(findings.map((finding) => finding.id)).toContain('tool-schema-path-parameter')
+    expect(findings.map((finding) => finding.id)).toContain('tool-schema-url-parameter')
+    expect(findings.filter((finding) => finding.id === 'tool-schema-destructive-operation')).toHaveLength(2)
+    expect(findings.map((finding) => finding.location)).toContain('server:root.tool:manage_content.inputSchema.properties.options.overwrite')
+  })
+
+  it('does not flag enum or const constrained schema parameters as arbitrary inputs', () => {
+    const result = auditConfig({
+      tools: [
+        {
+          name: 'restricted',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              command: { enum: ['git status'] },
+              path: { enum: ['README.md'] },
+              url: { const: 'https://docs.example.com' },
+            },
+          },
+        },
+      ],
+    })
+
+    expect(result.findings).toHaveLength(0)
+  })
+
   it('returns a good score for safe configs', () => {
     const result = auditConfig({
       mcpServers: {
