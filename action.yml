@@ -46,7 +46,10 @@ runs:
         SARIF_FILE: ${{ inputs.sarif-file }}
       run: |
         printf 'sarif-file=%s\n' "$SARIF_FILE" >> "$GITHUB_OUTPUT"
-        npx --yes --package=mcp-risk@0.2.0 -- mcp-risk scan "$TARGET" --sarif --fail-on "$FAIL_ON" > "$SARIF_FILE"
+        TOOL_DIRECTORY="$(mktemp -d)"
+        trap 'rm -rf "$TOOL_DIRECTORY"' EXIT
+        npm install --prefix "$TOOL_DIRECTORY" --ignore-scripts --no-save mcp-risk@0.2.0
+        node "$TOOL_DIRECTORY/node_modules/mcp-risk/dist/cli.js" scan "$TARGET" --sarif --fail-on "$FAIL_ON" > "$SARIF_FILE"
 
     - name: Upload SARIF report
       if: ${{ always() && inputs.upload-sarif == 'true' }}
