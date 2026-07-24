@@ -1,4 +1,6 @@
 export { auditConfig, auditFile } from './audit.js'
+export { discoverProjectConfigPaths, discoverUserConfigPaths, resolveTarget } from './parse.js'
 export { isFindingAllowed, loadPolicyForFile } from './policy.js'
 export { formatSarifReport } from './sarif.js'
+export type { DiscoveryOptions } from './parse.js'
 export type { AuditOptions, AuditResult, AuditSummary, Finding, McpConfig, McpServerConfig, McpTool, RiskPolicy, RiskPolicyAllowEntry, Severity } from './types.js'
