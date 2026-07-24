@@ -19,7 +19,8 @@ jobs:
           upload-sarif: 'false'
       - name: Verify SARIF report for safe configuration
         shell: bash
-        run: grep -q '"version": "2.1.0"' mcp-risk.sarif
+        run: |
+          grep -q '"version": "2.1.0"' mcp-risk.sarif
 
   risky-config:
     runs-on: ubuntu-latest
@@ -37,4 +38,5 @@ jobs:
         run: exit 1
       - name: Verify SARIF report contains the expected finding
         shell: bash
-        run: grep -q '"dangerous-command"' mcp-risk.sarif
+        run: |
+          grep -q '"dangerous-command"' mcp-risk.sarif
