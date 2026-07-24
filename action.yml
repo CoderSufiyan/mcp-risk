@@ -2,6 +2,10 @@ name: MCP Risk
 description: Scan MCP configurations for risky permissions, secret exposure, and prompt injection.
 author: Sufiyan Khan
 
+branding:
+  icon: shield
+  color: red
+
 inputs:
   target:
     description: MCP configuration file or directory to scan.
