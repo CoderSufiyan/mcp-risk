@@ -222,10 +222,9 @@ const inline = auditConfig({
 
 ## Roadmap
 
-- SARIF output for GitHub code scanning
-- Allowlist policy file for approved servers/tools
 - More client config discovery paths
-- Tool schema analysis for dangerous parameters
+- Scan all discovered MCP configurations
+- Official GitHub Action for MCP risk scanning
 - Optional remote repository audit
 
 ## Open source
