@@ -16,6 +16,7 @@ jobs:
       - uses: ./
         with:
           target: examples/safe-mcp.json
+          package-version: '0.2.0'
           upload-sarif: 'false'
       - name: Verify SARIF report for safe configuration
         shell: bash
@@ -31,6 +32,7 @@ jobs:
         uses: ./
         with:
           target: examples/risky-mcp.json
+          package-version: '0.2.0'
           upload-sarif: 'false'
       - name: Verify high-risk findings fail the action
         if: steps.scan.outcome != 'failure'

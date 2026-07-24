@@ -1,6 +1,6 @@
 {
   "name": "mcp-risk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.",
   "type": "module",
   "bin": {
