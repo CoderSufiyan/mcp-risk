@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { auditConfig, auditFile } from '../src/audit.js'
+import { discoverProjectConfigPaths, discoverUserConfigPaths, resolveTarget } from '../src/parse.js'
 import { formatTextReport } from '../src/report.js'
 import { formatSarifReport } from '../src/sarif.js'
 
@@ -215,5 +216,60 @@ describe('auditConfig', () => {
       locations: [{ physicalLocation: { artifactLocation: { uri: 'mcp.json' } } }],
       fixes: [{ description: { text: expect.any(String) } }],
     })
+  })
+})
+
+describe('config discovery', () => {
+  it('discovers supported project config paths while preserving candidate order', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      mkdirSync(join(directory, '.cursor'))
+      mkdirSync(join(directory, '.vscode'))
+      writeFileSync(join(directory, 'mcp.json'), '{}')
+      writeFileSync(join(directory, '.cursor', 'mcp.json'), '{}')
+      writeFileSync(join(directory, '.vscode', 'mcp.json'), '{}')
+
+      expect(discoverProjectConfigPaths(directory)).toEqual([
+        join(directory, 'mcp.json'),
+        join(directory, '.cursor', 'mcp.json'),
+        join(directory, '.vscode', 'mcp.json'),
+      ])
+      expect(resolveTarget(directory)).toBe(join(directory, 'mcp.json'))
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('preserves an explicit config file path', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    const path = join(directory, 'custom-config.json')
+    try {
+      writeFileSync(path, '{}')
+      expect(resolveTarget(path)).toBe(path)
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('discovers macOS, Linux, and Windows user config paths', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    const appData = join(directory, 'AppData', 'Roaming')
+    try {
+      const claudePath = join(directory, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json')
+      const continuePath = join(directory, '.continue', 'config.yaml')
+      const clinePath = join(appData, 'Code', 'User', 'globalStorage', 'saoudrizwan.claude-dev', 'settings', 'cline_mcp_settings.json')
+      mkdirSync(join(claudePath, '..'), { recursive: true })
+      mkdirSync(join(continuePath, '..'), { recursive: true })
+      mkdirSync(join(clinePath, '..'), { recursive: true })
+      writeFileSync(claudePath, '{}')
+      writeFileSync(continuePath, '{}')
+      writeFileSync(clinePath, '{}')
+
+      expect(discoverUserConfigPaths({ home: directory, platform: 'darwin' })).toContain(claudePath)
+      expect(discoverUserConfigPaths({ home: directory, platform: 'linux' })).toContain(continuePath)
+      expect(discoverUserConfigPaths({ home: directory, platform: 'win32', appData })).toContain(clinePath)
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
   })
 })
