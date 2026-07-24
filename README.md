@@ -78,6 +78,8 @@ mcp-risk scan --all
 
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
+Supported configs are JSON or YAML objects with `mcpServers`, `servers`, or root-level `tools`. `mcp-risk` reports malformed files and unsupported shapes instead of treating them as clean scans.
+
 Try the included demo:
 
 ```bash

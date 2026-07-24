@@ -1,6 +1,6 @@
 export { aggregateAuditResults, auditAll, auditConfig, auditFile } from './audit.js'
-export { discoverAllConfigPaths, discoverProjectConfigPaths, discoverUserConfigPaths, resolveTarget } from './parse.js'
+export { ConfigError, discoverAllConfigPaths, discoverProjectConfigPaths, discoverUserConfigPaths, resolveTarget, validateConfig } from './parse.js'
 export { isFindingAllowed, loadPolicyForFile } from './policy.js'
 export { formatSarifReport, formatSarifReports } from './sarif.js'
 export type { DiscoveryOptions } from './parse.js'
-export type { AuditBatchResult, AuditOptions, AuditResult, AuditSummary, Finding, McpConfig, McpServerConfig, McpTool, RiskPolicy, RiskPolicyAllowEntry, Severity } from './types.js'
+export type { AuditBatchResult, AuditOptions, AuditResult, AuditSummary, ConfigDiagnostic, Finding, McpConfig, McpServerConfig, McpTool, RiskPolicy, RiskPolicyAllowEntry, Severity } from './types.js'

@@ -1,20 +1,21 @@
-import { discoverAllConfigPaths, getServers, parseConfig, resolveTarget } from './parse.js'
+import { ConfigError, discoverAllConfigPaths, getServers, parseConfig, resolveTarget, validateConfig } from './parse.js'
 import { isFindingAllowed, loadPolicyForFile } from './policy.js'
 import { scanServer, scanTool } from './rules/config-rules.js'
 import { summarize } from './scoring.js'
-import type { AuditBatchResult, AuditOptions, AuditResult, McpConfig, McpServerConfig, McpTool } from './types.js'
+import type { AuditBatchResult, AuditOptions, AuditResult, ConfigDiagnostic, McpConfig, McpServerConfig, McpTool } from './types.js'
 import type { DiscoveryOptions } from './parse.js'
 
 export function auditConfig(config: McpConfig, target = '<inline>', options: AuditOptions = {}): AuditResult {
   const findings = []
-  const servers = getServers(config)
+  const validated = validateConfig(config, target)
+  const servers = getServers(validated)
 
   for (const [name, value] of Object.entries(servers)) {
     findings.push(...scanServer(name, value as McpServerConfig))
   }
 
-  if (Array.isArray(config.tools)) {
-    for (const tool of config.tools) findings.push(...scanTool('root', tool as McpTool))
+  if (Array.isArray(validated.tools)) {
+    for (const tool of validated.tools) findings.push(...scanTool('root', tool as McpTool))
   }
 
   const included = options.includeLow ? findings : findings.filter((finding) => finding.severity !== 'low')
@@ -37,17 +38,29 @@ export function auditAll(target: string, options?: AuditOptions, discoveryOption
   const paths = discoverAllConfigPaths(target, discoveryOptions)
   if (paths.length === 0) throw new Error(`No MCP configs found in ${target} or supported user locations`)
 
-  return aggregateAuditResults(paths.map((path) => auditConfig(parseConfig(path), path, {
-    ...options,
-    policy: options?.policy ?? loadPolicyForFile(path),
-  })))
+  const results: AuditResult[] = []
+  const diagnostics: ConfigDiagnostic[] = []
+  for (const path of paths) {
+    try {
+      results.push(auditConfig(parseConfig(path), path, {
+        ...options,
+        policy: options?.policy ?? loadPolicyForFile(path),
+      }))
+    } catch (error) {
+      if (!(error instanceof ConfigError)) throw error
+      diagnostics.push({ target: path, kind: error.kind, message: error.message })
+    }
+  }
+
+  return aggregateAuditResults(results, diagnostics)
 }
 
-export function aggregateAuditResults(results: AuditResult[]): AuditBatchResult {
+export function aggregateAuditResults(results: AuditResult[], diagnostics: ConfigDiagnostic[] = []): AuditBatchResult {
   const findings = results.flatMap((result) => result.findings)
   return {
     results,
     summary: summarize(findings),
     suppressed: results.reduce((total, result) => total + result.suppressed, 0),
+    diagnostics,
   }
 }

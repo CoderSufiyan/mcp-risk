@@ -53,6 +53,13 @@ export type AuditBatchResult = {
   results: AuditResult[]
   summary: AuditSummary
   suppressed: number
+  diagnostics: ConfigDiagnostic[]
+}
+
+export type ConfigDiagnostic = {
+  target: string
+  kind: 'parse' | 'validation'
+  message: string
 }
 
 export type RiskPolicyAllowEntry = {
