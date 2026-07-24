@@ -49,6 +49,12 @@ export type AuditResult = {
   suppressed: number
 }
 
+export type AuditBatchResult = {
+  results: AuditResult[]
+  summary: AuditSummary
+  suppressed: number
+}
+
 export type RiskPolicyAllowEntry = {
   server?: string
   finding?: string

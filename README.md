@@ -70,6 +70,12 @@ mcp-risk scan ./mcp.json
 mcp-risk scan ./project
 ```
 
+Scan every discovered project and user config:
+
+```bash
+mcp-risk scan --all
+```
+
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
 Try the included demo:

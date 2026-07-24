@@ -2,10 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { auditConfig, auditFile } from '../src/audit.js'
+import { auditAll, auditConfig, auditFile } from '../src/audit.js'
 import { discoverProjectConfigPaths, discoverUserConfigPaths, resolveTarget } from '../src/parse.js'
-import { formatTextReport } from '../src/report.js'
-import { formatSarifReport } from '../src/sarif.js'
+import { formatTextReport, formatTextReports } from '../src/report.js'
+import { formatSarifReport, formatSarifReports } from '../src/sarif.js'
 
 describe('auditConfig', () => {
   it('detects shell based MCP servers', () => {
@@ -246,6 +246,36 @@ describe('config discovery', () => {
     try {
       writeFileSync(path, '{}')
       expect(resolveTarget(path)).toBe(path)
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('audits every discovered project and user config once', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      const projectPath = join(directory, 'mcp.json')
+      const userPath = join(directory, '.cursor', 'mcp.json')
+      mkdirSync(join(directory, '.cursor'))
+      writeFileSync(projectPath, JSON.stringify({ mcpServers: { safe: { command: 'mcp-safe-server' } } }))
+      writeFileSync(userPath, JSON.stringify({ mcpServers: { risky: { command: 'bash' } } }))
+
+      const result = auditAll(directory, {}, { home: directory, platform: 'linux' })
+
+      expect(result.results.map((item) => item.target)).toEqual([projectPath, userPath])
+      expect(result.summary.high).toBe(1)
+      expect(result.results[1].findings[0].location).toBe('server:risky')
+      expect(formatTextReports(result.results)).toContain(`Target: ${userPath}`)
+      expect(JSON.stringify(formatSarifReports(result.results))).toContain(userPath)
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('reports when no project or user configs are discovered', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      expect(() => auditAll(directory, {}, { home: directory, platform: 'linux' })).toThrow('No MCP configs found')
     } finally {
       rmSync(directory, { force: true, recursive: true })
     }
