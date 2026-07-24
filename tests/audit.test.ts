@@ -1,5 +1,9 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { auditConfig } from '../src/audit.js'
+import { auditConfig, auditFile } from '../src/audit.js'
+import { formatTextReport } from '../src/report.js'
 import { formatSarifReport } from '../src/sarif.js'
 
 describe('auditConfig', () => {
@@ -79,6 +83,51 @@ describe('auditConfig', () => {
 
     expect(result.summary.grade).toBe('A')
     expect(result.findings).toHaveLength(0)
+  })
+
+  it('suppresses allowlisted findings from a project policy file', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      writeFileSync(join(directory, '.mcp-risk.json'), JSON.stringify({
+        allow: [{ server: 'filesystem', finding: 'tool-filesystem-capability' }],
+      }))
+      const configDirectory = join(directory, '.cursor')
+      mkdirSync(configDirectory)
+      writeFileSync(join(configDirectory, 'mcp.json'), JSON.stringify({
+        mcpServers: {
+          filesystem: {
+            tools: [{ name: 'read_file', description: 'Read files from a directory path' }],
+          },
+        },
+      }))
+
+      const result = auditFile(join(configDirectory, 'mcp.json'))
+
+      expect(result.findings).toHaveLength(0)
+      expect(result.suppressed).toBe(1)
+      expect(formatTextReport(result)).toContain('Suppressed: 1')
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('supports server-only and finding-only allow policy entries', () => {
+    const result = auditConfig({
+      mcpServers: {
+        shell: { command: 'bash' },
+        secrets: { env: { GITHUB_TOKEN: 'x' } },
+      },
+    }, '<inline>', {
+      policy: {
+        allow: [
+          { server: 'shell' },
+          { finding: 'sensitive-env' },
+        ],
+      },
+    })
+
+    expect(result.findings).toHaveLength(0)
+    expect(result.suppressed).toBe(2)
   })
 
   it('formats findings as SARIF with rules, locations, and fixes', () => {
