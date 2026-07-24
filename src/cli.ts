@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 import { auditAll, auditFile } from './audit.js'
+import { ConfigError } from './parse.js'
 import { formatTextReport, formatTextReports } from './report.js'
 import { formatSarifReport, formatSarifReports } from './sarif.js'
 import type { Severity } from './types.js'
@@ -38,10 +39,12 @@ program
         } else if (options.json) {
           process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
         } else {
-          process.stdout.write(formatTextReports(result.results))
+          process.stdout.write(formatTextReports(result.results, result.diagnostics))
         }
 
-        if (options.failOn && shouldFail(result.results.flatMap((item) => item.findings.map((finding) => finding.severity)), options.failOn)) {
+        if (result.diagnostics.length > 0) {
+          process.exitCode = 3
+        } else if (options.failOn && shouldFail(result.results.flatMap((item) => item.findings.map((finding) => finding.severity)), options.failOn)) {
           process.exitCode = 1
         }
       } else {
@@ -61,7 +64,7 @@ program
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       process.stderr.write(`mcp-risk: ${message}\n`)
-      process.exitCode = 2
+      process.exitCode = error instanceof ConfigError ? 3 : 2
     }
   })
 

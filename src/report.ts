@@ -1,6 +1,6 @@
 import pc from 'picocolors'
 import { summarize } from './scoring.js'
-import type { AuditResult, Finding, Severity } from './types.js'
+import type { AuditResult, ConfigDiagnostic, Finding, Severity } from './types.js'
 
 const severityRank: Record<Severity, number> = {
   critical: 0,
@@ -46,7 +46,7 @@ export function formatTextReport(result: AuditResult): string {
   return lines.join('\n')
 }
 
-export function formatTextReports(results: AuditResult[]): string {
+export function formatTextReports(results: AuditResult[], diagnostics: ConfigDiagnostic[] = []): string {
   const findings = results.flatMap((result) => result.findings)
   const summary = summarize(findings)
   const suppressed = results.reduce((total, result) => total + result.suppressed, 0)
@@ -57,6 +57,7 @@ export function formatTextReports(results: AuditResult[]): string {
     `Score: ${colorGrade(summary.grade)} (${summary.score}/100)`,
     `Findings: ${summary.critical} critical, ${summary.high} high, ${summary.medium} medium, ${summary.low} low`,
     ...(suppressed > 0 ? [`Suppressed: ${suppressed}`] : []),
+    ...(diagnostics.length > 0 ? [`Diagnostics: ${diagnostics.length}`] : []),
     '',
   ]
 
@@ -69,6 +70,10 @@ export function formatTextReports(results: AuditResult[]): string {
 
     const sorted = [...result.findings].sort((a, b) => severityRank[a.severity] - severityRank[b.severity])
     for (const finding of sorted) lines.push(formatFinding(finding), `  Fix: ${finding.recommendation}`, '')
+  }
+
+  for (const diagnostic of diagnostics) {
+    lines.push(pc.red(`${diagnostic.kind.toUpperCase()} ${diagnostic.message}`), '')
   }
 
   return lines.join('\n')

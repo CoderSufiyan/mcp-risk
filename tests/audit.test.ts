@@ -281,6 +281,49 @@ describe('config discovery', () => {
     }
   })
 
+  it('reports malformed and unsupported configs with actionable diagnostics', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      const malformedJson = join(directory, 'malformed.json')
+      const malformedYaml = join(directory, 'malformed.yaml')
+      const emptyConfig = join(directory, 'empty.json')
+      const emptyServers = join(directory, 'empty-servers.json')
+      const unsupportedConfig = join(directory, 'unsupported.json')
+      writeFileSync(malformedJson, '{\n  "mcpServers":\n}')
+      writeFileSync(malformedYaml, 'mcpServers: [')
+      writeFileSync(emptyConfig, '{}')
+      writeFileSync(emptyServers, JSON.stringify({ mcpServers: {} }))
+      writeFileSync(unsupportedConfig, JSON.stringify({ mcpServers: [] }))
+
+      expect(() => auditFile(malformedJson)).toThrow(/Invalid JSON.*line \d+/i)
+      expect(() => auditFile(malformedYaml)).toThrow(/Invalid YAML.*line/i)
+      expect(() => auditFile(emptyConfig)).toThrow('no recognized MCP servers or tools found')
+      expect(() => auditFile(emptyServers)).toThrow('no recognized MCP servers or tools found')
+      expect(() => auditFile(unsupportedConfig)).toThrow('"mcpServers" must be an object')
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
+  it('continues an all-config scan after a malformed config', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
+    try {
+      writeFileSync(join(directory, 'mcp.json'), JSON.stringify({ mcpServers: { safe: { command: 'mcp-safe-server' } } }))
+      mkdirSync(join(directory, '.cursor'))
+      writeFileSync(join(directory, '.cursor', 'mcp.json'), '{')
+
+      const result = auditAll(directory, {}, { home: directory, platform: 'linux' })
+
+      expect(result.results).toHaveLength(1)
+      expect(result.diagnostics).toEqual([expect.objectContaining({
+        target: join(directory, '.cursor', 'mcp.json'),
+        kind: 'parse',
+      })])
+    } finally {
+      rmSync(directory, { force: true, recursive: true })
+    }
+  })
+
   it('discovers macOS, Linux, and Windows user config paths', () => {
     const directory = mkdtempSync(join(tmpdir(), 'mcp-risk-'))
     const appData = join(directory, 'AppData', 'Roaming')
