@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: CoderSufiyan/mcp-risk@v1
+      - uses: CoderSufiyan/mcp-risk@v1.1.0
         with:
           target: .
           fail-on: high
