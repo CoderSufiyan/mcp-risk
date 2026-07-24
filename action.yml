@@ -46,7 +46,7 @@ runs:
         SARIF_FILE: ${{ inputs.sarif-file }}
       run: |
         printf 'sarif-file=%s\n' "$SARIF_FILE" >> "$GITHUB_OUTPUT"
-        npx --yes mcp-risk@0.2.0 scan "$TARGET" --sarif --fail-on "$FAIL_ON" > "$SARIF_FILE"
+        npx --yes --package=mcp-risk@0.2.0 mcp-risk scan "$TARGET" --sarif --fail-on "$FAIL_ON" > "$SARIF_FILE"
 
     - name: Upload SARIF report
       if: ${{ always() && inputs.upload-sarif == 'true' }}
