@@ -11,7 +11,13 @@ MCP servers give AI agents access to files, terminals, browsers, databases, GitH
 
 `mcp-risk` is a local-first scanner for MCP configs. Think `npm audit`, but for agent tools.
 
-## New in 0.2.0
+## New in 0.3.0
+
+- **Scan every config:** run `mcp-risk scan --all` to audit discovered project and user MCP configurations.
+- **Broader discovery:** find supported configs for Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline.
+- **Clear diagnostics:** malformed, empty, and unsupported MCP configs are reported instead of treated as clean scans.
+
+## Also in 0.2.0
 
 - **GitHub Code Scanning:** emit SARIF with `mcp-risk scan . --sarif` and upload findings to GitHub.
 - **Project policies:** use `.mcp-risk.json` to suppress approved server and finding combinations.
