@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { auditConfig } from '../src/audit.js'
+import { formatSarifReport } from '../src/sarif.js'
 
 describe('auditConfig', () => {
   it('detects shell based MCP servers', () => {
@@ -78,5 +79,39 @@ describe('auditConfig', () => {
 
     expect(result.summary.grade).toBe('A')
     expect(result.findings).toHaveLength(0)
+  })
+
+  it('formats findings as SARIF with rules, locations, and fixes', () => {
+    const result = auditConfig({
+      mcpServers: {
+        risky: { command: 'bash' },
+      },
+    }, 'mcp.json')
+
+    const sarif = formatSarifReport(result) as {
+      version: string
+      runs: Array<{
+        tool: { driver: { name: string; rules: Array<{ id: string; help: { text: string } }> } }
+        results: Array<{
+          ruleId: string
+          level: string
+          locations: Array<{ physicalLocation: { artifactLocation: { uri: string } } }>
+          fixes: Array<{ description: { text: string } }>
+        }>
+      }>
+    }
+
+    expect(sarif.version).toBe('2.1.0')
+    expect(sarif.runs[0].tool.driver.name).toBe('mcp-risk')
+    expect(sarif.runs[0].tool.driver.rules[0]).toMatchObject({
+      id: 'dangerous-command',
+      help: { text: expect.any(String) },
+    })
+    expect(sarif.runs[0].results[0]).toMatchObject({
+      ruleId: 'dangerous-command',
+      level: 'error',
+      locations: [{ physicalLocation: { artifactLocation: { uri: 'mcp.json' } } }],
+      fixes: [{ description: { text: expect.any(String) } }],
+    })
   })
 })

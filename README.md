@@ -82,6 +82,12 @@ JSON output:
 mcp-risk scan . --json
 ```
 
+SARIF output for GitHub Code Scanning:
+
+```bash
+mcp-risk scan . --sarif > mcp-risk.sarif
+```
+
 Use in CI:
 
 ```yaml
@@ -98,6 +104,30 @@ jobs:
         with:
           node-version: 22
       - run: npx mcp-risk scan . --fail-on high
+```
+
+Upload findings to GitHub Code Scanning:
+
+```yaml
+name: MCP Risk Audit
+
+on: [push, pull_request]
+
+permissions:
+  security-events: write
+
+jobs:
+  mcp-risk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx mcp-risk scan . --sarif > mcp-risk.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: mcp-risk.sarif
 ```
 
 ## What it detects

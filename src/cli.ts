@@ -2,6 +2,7 @@
 import { Command } from 'commander'
 import { auditFile } from './audit.js'
 import { formatTextReport } from './report.js'
+import { formatSarifReport } from './sarif.js'
 import type { Severity } from './types.js'
 
 const severityOrder: Record<Severity, number> = {
@@ -22,12 +23,17 @@ program
   .command('scan')
   .argument('[target]', 'MCP config file or directory', '.')
   .option('--json', 'Print JSON output')
+  .option('--sarif', 'Print SARIF JSON output')
   .option('--include-low', 'Include low severity findings')
   .option('--fail-on <severity>', 'Exit with code 1 when severity is found: low, medium, high, critical')
-  .action((target: string, options: { json?: boolean; includeLow?: boolean; failOn?: Severity }) => {
+  .action((target: string, options: { json?: boolean; sarif?: boolean; includeLow?: boolean; failOn?: Severity }) => {
     try {
+      if (options.json && options.sarif) throw new Error('Use either --json or --sarif, not both')
+
       const result = auditFile(target, { includeLow: options.includeLow })
-      if (options.json) {
+      if (options.sarif) {
+        process.stdout.write(`${JSON.stringify(formatSarifReport(result), null, 2)}\n`)
+      } else if (options.json) {
         process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
       } else {
         process.stdout.write(formatTextReport(result))
