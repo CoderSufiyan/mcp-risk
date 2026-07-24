@@ -1,0 +1,55 @@
+name: MCP Risk
+description: Scan MCP configurations for risky permissions, secret exposure, and prompt injection.
+author: Sufiyan Khan
+
+inputs:
+  target:
+    description: MCP configuration file or directory to scan.
+    required: false
+    default: .
+  fail-on:
+    description: Fail when a finding meets or exceeds this severity.
+    required: false
+    default: high
+  node-version:
+    description: Node.js version used to run mcp-risk.
+    required: false
+    default: '22'
+  sarif-file:
+    description: File path for the generated SARIF report.
+    required: false
+    default: mcp-risk.sarif
+  upload-sarif:
+    description: Upload the SARIF report to GitHub Code Scanning.
+    required: false
+    default: 'true'
+
+outputs:
+  sarif-file:
+    description: Path of the generated SARIF report.
+    value: ${{ steps.scan.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Scan MCP configuration
+      id: scan
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        SARIF_FILE: ${{ inputs.sarif-file }}
+      run: |
+        printf 'sarif-file=%s\n' "$SARIF_FILE" >> "$GITHUB_OUTPUT"
+        npx --yes mcp-risk@0.2.0 scan "$TARGET" --sarif --fail-on "$FAIL_ON" > "$SARIF_FILE"
+
+    - name: Upload SARIF report
+      if: ${{ always() && inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}

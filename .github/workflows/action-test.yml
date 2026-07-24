@@ -1,0 +1,34 @@
+name: Action Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          target: examples/safe-mcp.json
+          upload-sarif: 'false'
+
+  risky-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: scan
+        continue-on-error: true
+        uses: ./
+        with:
+          target: examples/risky-mcp.json
+          upload-sarif: 'false'
+      - name: Verify high-risk findings fail the action
+        if: steps.scan.outcome != 'failure'
+        shell: bash
+        run: exit 1

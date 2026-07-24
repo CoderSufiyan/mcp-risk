@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "safe": {
+      "command": "mcp-safe-server",
+      "args": ["--readonly"]
+    }
+  }
+}
