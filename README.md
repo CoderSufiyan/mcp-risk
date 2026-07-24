@@ -155,6 +155,7 @@ jobs:
 | Prompt injection in tool descriptions | "ignore previous instructions", "reveal secrets" |
 | Filesystem tools | read/write/delete file capabilities |
 | Network tools | fetch/browser/scrape/crawl capabilities |
+| Tool input schemas | unrestricted command, path, URL, delete, or overwrite parameters |
 
 ## Why MCP security matters
 
