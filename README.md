@@ -108,25 +108,7 @@ SARIF output for GitHub Code Scanning:
 mcp-risk scan . --sarif > mcp-risk.sarif
 ```
 
-Use in CI:
-
-```yaml
-name: MCP Risk Audit
-
-on: [push, pull_request]
-
-jobs:
-  mcp-risk:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npx mcp-risk scan . --fail-on high
-```
-
-Upload findings to GitHub Code Scanning:
+## GitHub Action
 
 ```yaml
 name: MCP Risk Audit
@@ -134,6 +116,7 @@ name: MCP Risk Audit
 on: [push, pull_request]
 
 permissions:
+  contents: read
   security-events: write
 
 jobs:
@@ -141,14 +124,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: CoderSufiyan/mcp-risk@v1
         with:
-          node-version: 22
-      - run: npx mcp-risk scan . --sarif > mcp-risk.sarif
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: mcp-risk.sarif
+          target: .
+          fail-on: high
+          node-version: '22'
 ```
+
+The action generates and uploads SARIF by default. It requires `security-events: write` to create GitHub Code Scanning alerts and installs the configured Node.js version automatically. Set `upload-sarif: 'false'` for pull requests from forks, where GitHub provides a read-only token. Pin the action to a commit SHA in production workflows.
 
 ## What it detects
 
