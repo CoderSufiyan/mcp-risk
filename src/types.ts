@@ -46,8 +46,19 @@ export type AuditResult = {
   target: string
   summary: AuditSummary
   findings: Finding[]
+  suppressed: number
+}
+
+export type RiskPolicyAllowEntry = {
+  server?: string
+  finding?: string
+}
+
+export type RiskPolicy = {
+  allow: RiskPolicyAllowEntry[]
 }
 
 export type AuditOptions = {
   includeLow?: boolean
+  policy?: RiskPolicy
 }

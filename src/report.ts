@@ -28,6 +28,7 @@ export function formatTextReport(result: AuditResult): string {
     `Target: ${result.target}`,
     `Score: ${colorGrade(result.summary.grade)} (${result.summary.score}/100)`,
     `Findings: ${result.summary.critical} critical, ${result.summary.high} high, ${result.summary.medium} medium, ${result.summary.low} low`,
+    ...(result.suppressed > 0 ? [`Suppressed: ${result.suppressed}`] : []),
     '',
   ]
 

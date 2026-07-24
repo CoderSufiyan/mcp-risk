@@ -76,6 +76,20 @@ Fail CI if high-risk findings exist:
 mcp-risk scan . --fail-on high
 ```
 
+Allow approved findings with a project policy file. `mcp-risk` searches from the scanned config upward for `.mcp-risk.json`:
+
+```json
+{
+  "allow": [
+    { "server": "filesystem", "finding": "tool-filesystem-capability" },
+    { "server": "internal-docs" },
+    { "finding": "tool-network-capability" }
+  ]
+}
+```
+
+An allow entry may match a server, a finding ID, or both. Allowed findings are suppressed from the score, output, and `--fail-on` evaluation; the report includes their count.
+
 JSON output:
 
 ```bash
