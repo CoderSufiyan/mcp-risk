@@ -41,9 +41,15 @@ function resultFromFinding(finding: Finding, target: string) {
 }
 
 export function formatSarifReport(result: AuditResult): object {
+  return formatSarifReports([result])
+}
+
+export function formatSarifReports(results: AuditResult[]): object {
   const rules = new Map<string, Finding>()
-  for (const finding of result.findings) {
-    if (!rules.has(finding.id)) rules.set(finding.id, finding)
+  for (const result of results) {
+    for (const finding of result.findings) {
+      if (!rules.has(finding.id)) rules.set(finding.id, finding)
+    }
   }
 
   return {
@@ -58,7 +64,7 @@ export function formatSarifReport(result: AuditResult): object {
             rules: [...rules.values()].map(ruleFromFinding),
           },
         },
-        results: result.findings.map((finding) => resultFromFinding(finding, result.target)),
+        results: results.flatMap((result) => result.findings.map((finding) => resultFromFinding(finding, result.target))),
       },
     ],
   }

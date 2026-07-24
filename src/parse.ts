@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import YAML from 'yaml'
 import type { McpConfig } from './types.js'
 
@@ -78,6 +78,16 @@ export function discoverUserConfigPaths(options: DiscoveryOptions = {}): string[
   }
 
   return candidates.filter(isFile)
+}
+
+export function discoverAllConfigPaths(target: string, options: DiscoveryOptions = {}): string[] {
+  if (statSync(target).isFile()) return [target]
+
+  const paths = [
+    ...discoverProjectConfigPaths(target),
+    ...discoverUserConfigPaths(options),
+  ]
+  return [...new Map(paths.map((path) => [resolve(path), path])).values()]
 }
 
 export function parseConfig(path: string): McpConfig {
