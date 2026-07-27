@@ -18,7 +18,7 @@ const program = new Command()
 program
   .name('mcp-risk')
   .description('Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.')
-  .version('0.3.0')
+  .version('0.3.1')
 
 program
   .command('scan')

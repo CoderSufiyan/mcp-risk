@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 - 2026-07-27
+
+- Refresh the npm package README with the `0.3.0` discovery, batch scanning, and diagnostics features.
+
 ## 0.3.0 - 2026-07-24
 
 - Discover MCP configurations for Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline.
