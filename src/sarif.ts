@@ -1,4 +1,13 @@
-import type { AuditResult, Finding, Severity } from './types.js'
+import type { Finding, Severity } from './types.js'
+
+type SarifResult = {
+  target: string
+  findings: Finding[]
+  repository?: {
+    url: string
+    commit: string
+  }
+}
 
 type SarifLevel = 'error' | 'warning' | 'note'
 
@@ -40,11 +49,24 @@ function resultFromFinding(finding: Finding, target: string) {
   }
 }
 
-export function formatSarifReport(result: AuditResult): object {
+function targetIdentity(result: SarifResult) {
+  if (!result.repository) return { target: result.target }
+  return {
+    target: result.target,
+    repository: result.repository.url,
+    commit: result.repository.commit,
+  }
+}
+
+function artifactTarget(result: SarifResult): string {
+  return result.repository ? `${result.repository.url}/tree/${result.repository.commit}` : result.target
+}
+
+export function formatSarifReport(result: SarifResult): object {
   return formatSarifReports([result])
 }
 
-export function formatSarifReports(results: AuditResult[]): object {
+export function formatSarifReports(results: SarifResult[]): object {
   const rules = new Map<string, Finding>()
   for (const result of results) {
     for (const finding of result.findings) {
@@ -64,7 +86,8 @@ export function formatSarifReports(results: AuditResult[]): object {
             rules: [...rules.values()].map(ruleFromFinding),
           },
         },
-        results: results.flatMap((result) => result.findings.map((finding) => resultFromFinding(finding, result.target))),
+        properties: { targets: results.map(targetIdentity) },
+        results: results.flatMap((result) => result.findings.map((finding) => resultFromFinding(finding, artifactTarget(result)))),
       },
     ],
   }
