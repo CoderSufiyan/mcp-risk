@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "npm-safe",
+      "kind": "npm-package",
+      "path": "npm/safe-package",
+      "version": "1.0.0",
+      "config": "mcp.json",
+      "expected": {
+        "findingIds": [],
+        "installScripts": false,
+        "sourcePatterns": []
+      }
+    },
+    {
+      "id": "npm-risky",
+      "kind": "npm-package",
+      "path": "npm/risky-package",
+      "version": "1.0.0",
+      "config": "mcp.json",
+      "expected": {
+        "findingIds": [
+          "dangerous-command",
+          "network-download",
+          "prompt-injection:instruction-override",
+          "prompt-injection:secret-exfiltration",
+          "sensitive-env",
+          "shell-eval",
+          "tool-filesystem-capability",
+          "tool-network-capability",
+          "tool-schema-command-parameter",
+          "tool-schema-destructive-operation",
+          "tool-schema-path-parameter",
+          "tool-schema-url-parameter",
+          "tool-shell-capability"
+        ],
+        "installScripts": true,
+        "sourcePatterns": [
+          "filesystem-write",
+          "hardcoded-secret",
+          "network-access",
+          "shell-execution"
+        ]
+      }
+    },
+    {
+      "id": "github-safe",
+      "kind": "github-repository",
+      "path": "github/safe-repository",
+      "ref": "1111111111111111111111111111111111111111",
+      "config": "mcp.json",
+      "expected": {
+        "findingIds": [],
+        "installScripts": false,
+        "sourcePatterns": []
+      }
+    },
+    {
+      "id": "github-risky",
+      "kind": "github-repository",
+      "path": "github/risky-repository",
+      "ref": "2222222222222222222222222222222222222222",
+      "config": "mcp.json",
+      "expected": {
+        "findingIds": [
+          "insecure-transport",
+          "tool-filesystem-capability",
+          "tool-schema-destructive-operation",
+          "tool-schema-path-parameter"
+        ],
+        "installScripts": false,
+        "sourcePatterns": [
+          "filesystem-write"
+        ]
+      }
+    }
+  ]
+}

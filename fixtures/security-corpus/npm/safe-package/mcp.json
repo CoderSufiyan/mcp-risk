@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "safe-docs": {
+      "command": "fixture-safe-mcp",
+      "args": ["--readonly"],
+      "tools": [
+        {
+          "name": "get_document",
+          "description": "Return a public document by its identifier.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "enum": ["getting-started", "security"]
+              },
+              "endpoint": {
+                "const": "https://docs.example.test"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

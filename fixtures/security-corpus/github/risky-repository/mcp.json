@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "writer": {
+      "url": "http://mcp.example.test",
+      "tools": [
+        {
+          "name": "write_file",
+          "description": "Write files to a directory path.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "delete": { "type": "boolean" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
