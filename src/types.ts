@@ -62,6 +62,35 @@ export type ConfigDiagnostic = {
   message: string
 }
 
+export type NpmVerificationMetadata = {
+  publishedAt?: string
+  publishAgeDays?: number
+  createdAt?: string
+  maintainers: string[]
+  dependencyCount: number
+  dependencies: Array<{
+    name: string
+    specifier?: string
+    type: 'dependency' | 'optional' | 'peer' | 'bundled'
+  }>
+  installScripts: string[]
+  license?: string
+  repository?: string
+  tarball?: string
+}
+
+export type NpmVerificationResult = {
+  target: string
+  kind: 'npm'
+  package: {
+    name: string
+    version: string
+  }
+  metadata: NpmVerificationMetadata
+  summary: AuditSummary
+  findings: Finding[]
+}
+
 export type RiskPolicyAllowEntry = {
   server?: string
   finding?: string

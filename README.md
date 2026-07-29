@@ -82,6 +82,13 @@ Scan every discovered project and user config:
 mcp-risk scan --all
 ```
 
+Verify an exact npm package version before installation without executing package code:
+
+```bash
+mcp-risk verify npm:example-mcp@1.2.3
+mcp-risk verify npm:@scope/example-mcp@1.2.3 --format markdown
+```
+
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
 Supported configs are JSON or YAML objects with `mcpServers`, `servers`, or root-level `tools`. `mcp-risk` reports malformed files and unsupported shapes instead of treating them as clean scans.

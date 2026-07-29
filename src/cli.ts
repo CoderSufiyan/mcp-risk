@@ -5,6 +5,8 @@ import { ConfigError } from './parse.js'
 import { formatTextReport, formatTextReports } from './report.js'
 import { formatSarifReport, formatSarifReports } from './sarif.js'
 import type { Severity } from './types.js'
+import { verifyNpmPackage } from './verify/npm.js'
+import { formatVerificationMarkdown, formatVerificationText } from './verify/report.js'
 
 const severityOrder: Record<Severity, number> = {
   low: 1,
@@ -68,7 +70,33 @@ program
     }
   })
 
-program.parse()
+program
+  .command('verify')
+  .argument('<target>', 'Exact npm package target, for example npm:package@1.2.3')
+  .option('--json', 'Print JSON output')
+  .option('--format <format>', 'Output format: text, json, markdown', 'text')
+  .option('--fail-on <severity>', 'Exit with code 1 when severity is found: low, medium, high, critical')
+  .action(async (target: string, options: { json?: boolean; format: string; failOn?: Severity }) => {
+    try {
+      const format = options.json ? 'json' : options.format
+      if (!['text', 'json', 'markdown'].includes(format)) throw new Error('Verify format must be text, json, or markdown')
+      if (options.failOn && !(options.failOn in severityOrder)) throw new Error('Fail severity must be low, medium, high, or critical')
+      const result = await verifyNpmPackage(target)
+      if (format === 'json') process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
+      if (format === 'markdown') process.stdout.write(formatVerificationMarkdown(result))
+      if (format === 'text') process.stdout.write(formatVerificationText(result))
+
+      if (options.failOn && shouldFail(result.findings.map((finding) => finding.severity), options.failOn)) {
+        process.exitCode = 1
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      process.stderr.write(`mcp-risk: ${message}\n`)
+      process.exitCode = 2
+    }
+  })
+
+program.parseAsync()
 
 function shouldFail(severities: Severity[], threshold: Severity): boolean {
   return severities.some((severity) => severityOrder[severity] >= severityOrder[threshold])
