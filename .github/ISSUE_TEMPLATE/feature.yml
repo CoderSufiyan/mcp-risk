@@ -1,0 +1,53 @@
+name: Feature proposal
+description: Propose a roadmap feature or security rule.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: Review ROADMAP.md and search existing issues before proposing new work.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What security or workflow problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the expected CLI, API, report, or rule behavior.
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Suggested target release
+      description: For example, v0.5.0. Maintainers make the final milestone decision.
+      placeholder: v0.5.0
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List related or blocking issues, such as #22.
+      placeholder: "Depends on: #22"
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable behavior and required tests.
+      placeholder: |
+        - [ ] Behavior is implemented
+        - [ ] Safe and risky tests are included
+        - [ ] Documentation is updated
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Security boundary
+      options:
+        - label: Static verification and fixtures will not execute untrusted code. Any proposed runtime behavior is explicit, opt-in, isolated, and documented.
+          required: true

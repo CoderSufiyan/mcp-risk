@@ -33,6 +33,8 @@ MCP servers give AI agents access to files, terminals, browsers, databases, GitH
 - **Project policies:** suppress reviewed config findings with `.mcp-risk.json`; downloaded package and repository policies are never trusted.
 - **Library API:** embed config, npm-package, GitHub-repository, reporting, and source-scanning APIs in Node.js tools.
 
+See the [versioned roadmap](ROADMAP.md) and [public project board](https://github.com/users/CoderSufiyan/projects/1) for planned work. The [contributing guide](CONTRIBUTING.md) explains how to claim an issue, add security fixtures, and open a pull request.
+
 ![mcp-risk demo](docs/demo.svg)
 
 ```bash

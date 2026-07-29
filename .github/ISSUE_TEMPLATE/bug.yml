@@ -1,0 +1,59 @@
+name: Bug report
+description: Report incorrect behavior, a false positive, or a false negative.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include real secrets or exploitable vulnerability details. Use private vulnerability reporting for security-sensitive reports.
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Config scanning
+        - npm verification
+        - GitHub verification
+        - Report output
+        - GitHub Action
+        - False positive
+        - False negative
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: mcp-risk version
+      placeholder: 0.4.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide an inert, fictional example and the exact command. Remove tokens and private source.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Paste sanitized output without credentials or private artifact contents.
+      render: text
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: This report contains no real secrets, private source, or instructions to execute an untrusted fixture.
+          required: true
