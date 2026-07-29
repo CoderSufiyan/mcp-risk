@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you find a security issue in `mcp-risk`, please open a GitHub security advisory or contact the maintainer privately.
+If you find a security issue in `mcp-risk`, use [GitHub private vulnerability reporting](https://github.com/CoderSufiyan/mcp-risk/security/advisories/new). This sends the report privately to the maintainer.
 
 Do not open a public issue for vulnerabilities that could help attackers bypass detection or compromise users.
 
