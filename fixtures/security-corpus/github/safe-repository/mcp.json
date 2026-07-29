@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "catalog": {
+      "url": "https://catalog.example.test/mcp",
+      "tools": [
+        {
+          "name": "lookup_item",
+          "description": "Look up a public catalog item.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "itemId": { "enum": ["one", "two"] }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

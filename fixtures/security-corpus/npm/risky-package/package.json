@@ -1,0 +1,9 @@
+{
+  "name": "fixture-risky-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/download.js"
+  }
+}

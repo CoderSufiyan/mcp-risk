@@ -236,6 +236,8 @@ const inline = auditConfig({
 
 `mcp-risk` is MIT licensed and open for contributions. Security-focused rules, client config examples, docs fixes, and false-positive reports are welcome.
 
+The public [MCP security fixture corpus](fixtures/security-corpus) contains pinned safe and risky npm-package and GitHub-repository examples used for regression testing. Contributions must use fictional, non-executable samples and include explicit expected findings.
+
 ## License
 
 MIT
