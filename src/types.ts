@@ -82,6 +82,7 @@ export type NpmVerificationMetadata = {
     value: string
   }
   tarballSizeBytes?: number
+  sourceFileCount?: number
 }
 
 export type NpmVerificationResult = {

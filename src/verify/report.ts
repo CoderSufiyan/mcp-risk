@@ -16,6 +16,7 @@ export function formatVerificationText(result: NpmVerificationResult): string {
     `Tarball: ${plain(result.metadata.tarball ?? 'unknown')}`,
     `SHA-256: ${result.metadata.tarballDigest?.value ?? 'unknown'}`,
     `Tarball size: ${result.metadata.tarballSizeBytes ?? 'unknown'} bytes`,
+    `Source files scanned: ${result.metadata.sourceFileCount ?? 0}`,
     `Findings: ${result.findings.length}`,
     '',
   ]
@@ -29,7 +30,7 @@ export function formatVerificationText(result: NpmVerificationResult): string {
   }
 
   for (const finding of result.findings) {
-    lines.push(`${finding.severity.toUpperCase()} ${plain(finding.title)}`, `  ${plain(finding.location)}`, `  ${plain(finding.message)}`, `  Fix: ${plain(finding.recommendation)}`, '')
+    lines.push(`${finding.severity.toUpperCase()} [${plain(finding.id)}] ${plain(finding.title)}`, `  ${plain(finding.location)}`, `  ${plain(finding.message)}`, `  Fix: ${plain(finding.recommendation)}`, '')
   }
   return lines.join('\n')
 }
@@ -52,6 +53,7 @@ export function formatVerificationMarkdown(result: NpmVerificationResult): strin
     `| Tarball | ${markdown(result.metadata.tarball ?? 'unknown')} |`,
     `| SHA-256 | ${result.metadata.tarballDigest?.value ?? 'unknown'} |`,
     `| Tarball size | ${result.metadata.tarballSizeBytes ?? 'unknown'} bytes |`,
+    `| Source files scanned | ${result.metadata.sourceFileCount ?? 0} |`,
     '',
     '## Dependencies',
     '',
@@ -70,7 +72,7 @@ export function formatVerificationMarkdown(result: NpmVerificationResult): strin
 
   if (result.findings.length === 0) lines.push('No risky static metadata patterns found.', '')
   for (const finding of result.findings) {
-    lines.push(`### ${finding.severity.toUpperCase()}: ${markdown(finding.title)}`, '', markdown(finding.message), '', `**Location:** ${markdown(finding.location)}`, '', `**Recommendation:** ${markdown(finding.recommendation)}`, '')
+    lines.push(`### ${finding.severity.toUpperCase()}: ${markdown(finding.title)}`, '', `**Rule:** ${markdown(finding.id)}`, '', markdown(finding.message), '', `**Location:** ${markdown(finding.location)}`, '', `**Recommendation:** ${markdown(finding.recommendation)}`, '')
   }
   lines.push('> Static verification does not execute the package and is not a guarantee of safety.', '')
   return lines.join('\n')

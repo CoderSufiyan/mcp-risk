@@ -89,7 +89,7 @@ mcp-risk verify npm:example-mcp@1.2.3
 mcp-risk verify npm:@scope/example-mcp@1.2.3 --format markdown
 ```
 
-Verification resolves and downloads the selected tarball to temporary storage, reports its SHA-256 digest, and removes the temporary files without executing package code or lifecycle scripts.
+Verification resolves and downloads the selected tarball to temporary storage, reports its SHA-256 digest, and statically scans included JavaScript, TypeScript, manifests, and MCP configs for shell, network, filesystem, and secret risks. Temporary files are removed without executing package code or lifecycle scripts.
 
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
