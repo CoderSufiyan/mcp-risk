@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto'
+import { mkdtemp, open, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { auditConfig } from '../audit.js'
 import { ConfigError } from '../parse.js'
 import { summarize } from '../scoring.js'
@@ -10,12 +14,15 @@ export type NpmVerifyOptions = {
   fetch?: FetchLike
   now?: Date
   timeoutMs?: number
+  temporaryDirectory?: string
+  maxTarballBytes?: number
 }
 
 type FetchLike = (url: string, init?: { signal?: AbortSignal }) => Promise<{
   ok: boolean
   status: number
-  json(): Promise<unknown>
+  json?(): Promise<unknown>
+  body?: ReadableStream<Uint8Array> | null
 }>
 
 export async function verifyNpmPackage(target: string, options: NpmVerifyOptions = {}): Promise<NpmVerificationResult> {
@@ -26,6 +33,7 @@ export async function verifyNpmPackage(target: string, options: NpmVerifyOptions
     signal: AbortSignal.timeout(options.timeoutMs ?? 10_000),
   })
   if (!response.ok) throw new Error(`npm registry returned ${response.status} for ${name}`)
+  if (!response.json) throw new Error(`npm registry returned invalid metadata for ${name}`)
 
   const document = await response.json()
   if (!isRecord(document) || !isRecord(document.versions)) throw new Error(`npm registry returned invalid metadata for ${name}`)
@@ -34,6 +42,9 @@ export async function verifyNpmPackage(target: string, options: NpmVerifyOptions
 
   const maintainers = normalizeMaintainers(packageVersion.maintainers ?? document.maintainers)
   const dependencies = normalizeDependencies(packageVersion)
+  const tarball = isRecord(packageVersion.dist) ? stringValue(packageVersion.dist.tarball) : undefined
+  if (!tarball) throw new Error(`npm package ${name}@${version} does not declare a tarball URL`)
+  const integrity = await hashTarball(tarball, fetcher, options)
   const publishedAt = stringValue(isRecord(document.time) ? document.time[version] : undefined)
   const findings = scanPackageMetadata(name, version, packageVersion, maintainers)
   for (const config of metadataConfigs(packageVersion)) {
@@ -59,10 +70,50 @@ export async function verifyNpmPackage(target: string, options: NpmVerifyOptions
       installScripts: lifecycleScripts(packageVersion.scripts),
       license: stringValue(packageVersion.license),
       repository: repositoryUrl(packageVersion.repository),
-      tarball: isRecord(packageVersion.dist) ? stringValue(packageVersion.dist.tarball) : undefined,
+      tarball,
+      tarballDigest: { algorithm: 'sha256', value: integrity.digest },
+      tarballSizeBytes: integrity.sizeBytes,
     },
     findings,
     summary: summarize(findings),
+  }
+}
+
+async function hashTarball(tarball: string, fetcher: FetchLike, options: NpmVerifyOptions): Promise<{ digest: string; sizeBytes: number }> {
+  const directory = await mkdtemp(join(options.temporaryDirectory ?? tmpdir(), 'mcp-risk-'))
+  const path = join(directory, 'package.tgz')
+  let file: Awaited<ReturnType<typeof open>> | undefined
+  try {
+    const response = await fetcher(tarball, { signal: AbortSignal.timeout(options.timeoutMs ?? 10_000) })
+    if (!response.ok) throw new Error(`npm tarball download returned ${response.status}`)
+    if (!response.body) throw new Error('npm tarball download returned an invalid response')
+
+    const maximum = options.maxTarballBytes ?? 100 * 1024 * 1024
+    if (maximum <= 0) throw new Error('Maximum tarball size must be greater than zero')
+    const hash = createHash('sha256')
+    let sizeBytes = 0
+    file = await open(path, 'w')
+    for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+      const bytes = Buffer.from(chunk)
+      sizeBytes += bytes.byteLength
+      if (sizeBytes > maximum) throw new Error(`npm tarball exceeds the ${maximum}-byte size limit`)
+      hash.update(bytes)
+      let offset = 0
+      while (offset < bytes.byteLength) {
+        const { bytesWritten } = await file.write(bytes, offset, bytes.byteLength - offset, null)
+        offset += bytesWritten
+      }
+    }
+    return {
+      digest: hash.digest('hex'),
+      sizeBytes,
+    }
+  } finally {
+    try {
+      await file?.close()
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   }
 }
 
