@@ -9,19 +9,29 @@
 
 MCP servers give AI agents access to files, terminals, browsers, databases, GitHub, Slack, and internal tools. That power is useful, but risky: a malicious or poorly scoped MCP server can expose secrets, run shell commands, or hide prompt-injection instructions inside tool descriptions.
 
-`mcp-risk` is a local-first scanner for MCP configs. Think `npm audit`, but for agent tools.
+`mcp-risk` is a local-first trust layer for MCP configs, npm packages, and GitHub repositories. Think `npm audit`, but for agent tools.
 
-## New in 0.3.0
+## New in 0.4.0
 
-- **Scan every config:** run `mcp-risk scan --all` to audit discovered project and user MCP configurations.
-- **Broader discovery:** find supported configs for Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline.
-- **Clear diagnostics:** malformed, empty, and unsupported MCP configs are reported instead of treated as clean scans.
+- **Verify npm packages before installation:** inspect an exact package version, resolved tarball, dependency metadata, maintainers, publish age, and lifecycle scripts.
+- **Check tarball integrity:** calculate and report SHA-256 for the exact downloaded npm archive.
+- **Scan package source statically:** inspect JavaScript, TypeScript, manifests, and bundled MCP configs without executing code.
+- **Verify pinned GitHub repositories:** resolve a branch, tag, or commit to an immutable SHA and scan that exact archive.
+- **Use verification in CI:** emit text, JSON, Markdown, or SARIF and fail on a configured severity threshold.
+- **Regression-tested security corpus:** use public safe and risky npm/GitHub fixtures with explicit expected findings.
 
-## Also in 0.2.0
+## Main features
 
-- **GitHub Code Scanning:** emit SARIF with `mcp-risk scan . --sarif` and upload findings to GitHub.
-- **Project policies:** use `.mcp-risk.json` to suppress approved server and finding combinations.
-- **Tool schema analysis:** detect unrestricted command, filesystem path, URL, and destructive-operation parameters in MCP tool input schemas.
+- **MCP config auditing:** detect shell execution, secret exposure, insecure transports, dangerous tools, prompt injection, and risky input schemas.
+- **Multi-client discovery:** find project and user configs for Claude Desktop, Claude Code, Cursor, Cline, Continue, Windsurf, and VS Code.
+- **Batch scanning:** audit all discovered configs with `mcp-risk scan --all` while preserving parse and validation diagnostics.
+- **Pre-install npm verification:** require an exact version, inspect registry metadata, hash the selected tarball, and scan extracted source statically.
+- **Pinned GitHub verification:** require an explicit ref, resolve it to a commit SHA, and scan repository contents without running them.
+- **Hardened archive handling:** bound compressed size, declared extracted size, and entry count; exclude links and non-file entries; clean temporary files.
+- **Automation outputs:** produce human-readable text, JSON, Markdown, and SARIF with severity-based exit codes.
+- **GitHub Action:** run audits in CI and upload SARIF to GitHub Code Scanning.
+- **Project policies:** suppress reviewed config findings with `.mcp-risk.json`; downloaded package and repository policies are never trusted.
+- **Library API:** embed config, npm-package, GitHub-repository, reporting, and source-scanning APIs in Node.js tools.
 
 ![mcp-risk demo](docs/demo.svg)
 
@@ -87,6 +97,7 @@ Verify an exact npm package version before installation without executing packag
 ```bash
 mcp-risk verify npm:example-mcp@1.2.3
 mcp-risk verify npm:@scope/example-mcp@1.2.3 --format markdown
+mcp-risk verify npm:example-mcp@1.2.3 --fail-on high
 ```
 
 Verification resolves and downloads the selected tarball to temporary storage, reports its SHA-256 digest, and statically scans included JavaScript, TypeScript, manifests, and MCP configs for shell, network, filesystem, and secret risks. Temporary files are removed without executing package code or lifecycle scripts.
@@ -99,6 +110,18 @@ mcp-risk verify github:owner/repository@0123456789abcdef0123456789abcdef01234567
 ```
 
 Set `GITHUB_TOKEN` when verifying private repositories or to increase GitHub API rate limits.
+
+Verification targets must be pinned explicitly. npm tags and version ranges such as `latest` or `^1.2.3` are rejected. GitHub branches and tags are accepted only because `mcp-risk` resolves and reports the exact commit SHA before scanning.
+
+Verification output formats:
+
+```bash
+mcp-risk verify npm:example-mcp@1.2.3 --json
+mcp-risk verify npm:example-mcp@1.2.3 --format markdown
+mcp-risk verify github:owner/repository@v1.2.3 --sarif
+```
+
+Use `--fail-on low|medium|high|critical` with either `scan` or `verify` to return exit code `1` when the threshold is met. Resolution, validation, authentication, and download failures return a separate non-zero error code.
 
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
@@ -163,6 +186,7 @@ jobs:
           target: .
           fail-on: high
           node-version: '22'
+          package-version: '0.4.0'
 ```
 
 The action generates and uploads SARIF by default. It requires `security-events: write` to create GitHub Code Scanning alerts and installs the configured Node.js version automatically. Set `upload-sarif: 'false'` for pull requests from forks, where GitHub provides a read-only token. Pin the action to a commit SHA in production workflows.
@@ -179,6 +203,12 @@ The action generates and uploads SARIF by default. It requires `security-events:
 | Filesystem tools | read/write/delete file capabilities |
 | Network tools | fetch/browser/scrape/crawl capabilities |
 | Tool input schemas | unrestricted command, path, URL, delete, or overwrite parameters |
+| Package install scripts | `preinstall`, `install`, or `postinstall` lifecycle hooks |
+| Static shell execution | `child_process`, `exec`, `spawn`, `Bun.spawn`, or `Deno.Command` |
+| Static network access | `fetch`, Axios, HTTP(S), sockets, TLS, Undici, or WebSocket access |
+| Static filesystem access | Node filesystem imports and common read, write, rename, or delete calls |
+| Hardcoded secrets | embedded API keys, tokens, passwords, and common credential prefixes |
+| Archive integrity | SHA-256 digest, archive size, and bounded extraction limits |
 
 ## Why MCP security matters
 
@@ -216,7 +246,7 @@ HIGH  Tool description contains prompt-injection language
 ## Library API
 
 ```ts
-import { auditConfig, auditFile } from 'mcp-risk'
+import { auditConfig, auditFile, verifyGitHubRepository, verifyNpmPackage } from 'mcp-risk'
 
 const result = auditFile('./mcp.json')
 
@@ -233,22 +263,21 @@ const inline = auditConfig({
     },
   },
 })
+
+const npmResult = await verifyNpmPackage('npm:example-mcp@1.2.3')
+const repositoryResult = await verifyGitHubRepository('github:owner/repository@v1.2.3')
 ```
+
+Both verification APIs return the immutable package or commit identity, metadata, findings, and score. They download into temporary storage, scan statically, and remove temporary files without importing, installing, or executing target code.
 
 ## Design goals
 
-- Local-first: config scanning happens on your machine.
-- CI-friendly: text for humans, JSON and exit codes for automation.
+- Local-first: analysis happens on your machine; remote verification downloads only the explicitly selected archive.
+- Static-only: downloaded package and repository code is never imported, installed, or executed.
+- CI-friendly: text and Markdown for humans, JSON and SARIF for automation.
 - Practical findings: every warning includes a concrete recommendation.
 - Lightweight: no AI API key required.
 - Client-agnostic: works with Cursor, Claude Desktop, Claude Code, Cline, Continue, and other MCP clients.
-
-## Roadmap
-
-- More client config discovery paths
-- Scan all discovered MCP configurations
-- Official GitHub Action for MCP risk scanning
-- Optional remote repository audit
 
 ## Open source
 

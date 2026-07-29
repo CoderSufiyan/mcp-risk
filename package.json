@@ -1,7 +1,7 @@
 {
   "name": "mcp-risk",
-  "version": "0.3.1",
-  "description": "Audit MCP configs and servers for risky tools, secret exposure, and prompt-injection patterns.",
+  "version": "0.4.0",
+  "description": "Audit MCP configs and statically verify npm packages and GitHub repositories before connecting agent tools.",
   "type": "module",
   "bin": {
     "mcp-risk": "dist/cli.js"
@@ -39,7 +39,11 @@
     "ai-agent-security",
     "agent-security",
     "mcp-server",
-    "mcp-client"
+    "mcp-client",
+    "static-analysis",
+    "supply-chain-security",
+    "npm-security",
+    "github-security"
   ],
   "author": "Sufiyan Khan",
   "license": "MIT",
