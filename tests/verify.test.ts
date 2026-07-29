@@ -1,12 +1,30 @@
+import { createHash } from 'node:crypto'
 import { readdirSync, readFileSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { c as createTar } from 'tar'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { parseNpmTarget, verifyNpmPackage } from '../src/verify/npm.js'
 import { formatVerificationMarkdown } from '../src/verify/report.js'
+import { scanPackageDirectory } from '../src/verify/source.js'
 
 const corpusRoot = join(process.cwd(), 'fixtures', 'security-corpus', 'npm')
+const fixtureTarballs = new Map<string, Buffer>()
+let archiveDirectory: string
+
+beforeAll(async () => {
+  archiveDirectory = await mkdtemp(join(tmpdir(), 'mcp-risk-archives-'))
+  for (const fixture of ['safe-package', 'risky-package']) {
+    const archive = join(archiveDirectory, `${fixture}.tgz`)
+    await createTar({ cwd: join(corpusRoot, fixture), file: archive, gzip: true }, ['.'])
+    fixtureTarballs.set(fixture, await readFile(archive))
+  }
+})
+
+afterAll(async () => {
+  await rm(archiveDirectory, { recursive: true, force: true })
+})
 
 describe('npm package verification', () => {
   it('parses scoped and unscoped exact package targets', () => {
@@ -23,6 +41,7 @@ describe('npm package verification', () => {
     })
 
     expect(result.summary.grade).toBe('A')
+    const tarball = fixtureTarballs.get('safe-package')!
     expect(result.metadata).toMatchObject({
       dependencyCount: 0,
       dependencies: [],
@@ -31,9 +50,10 @@ describe('npm package verification', () => {
       publishAgeDays: 10,
       tarballDigest: {
         algorithm: 'sha256',
-        value: 'e42f57587315ac1ec42b5b06ef3dc4e9e6810ed055a58c9e5e23c6b68678bd18',
+        value: createHash('sha256').update(tarball).digest('hex'),
       },
-      tarballSizeBytes: 23,
+      tarballSizeBytes: tarball.byteLength,
+      sourceFileCount: 3,
     })
     expect(result.findings).toHaveLength(0)
   })
@@ -47,6 +67,13 @@ describe('npm package verification', () => {
 
     expect(result.findings.map((finding) => finding.id)).toContain('npm-install-script')
     expect(result.findings.map((finding) => finding.id)).toContain('dangerous-command')
+    expect(result.findings.map((finding) => finding.id)).toEqual(expect.arrayContaining([
+      'filesystem-write',
+      'hardcoded-secret',
+      'network-access',
+      'shell-execution',
+    ]))
+    expect(result.findings.find((finding) => finding.id === 'shell-execution')?.location).toMatch(/src\/server\.js:\d+$/)
     expect(result.metadata.installScripts).toEqual(['postinstall'])
     const markdown = formatVerificationMarkdown(result)
     expect(markdown).toContain(result.metadata.tarballDigest!.value)
@@ -118,6 +145,45 @@ describe('npm package verification', () => {
       fetch: registryFetch(packageJson),
       maxTarballBytes: 10,
     })).rejects.toThrow('exceeds the 10-byte size limit')
+
+    await expect(verifyNpmPackage('npm:fixture-safe-mcp@1.0.0', {
+      fetch: registryFetch(packageJson),
+      maxExtractedFiles: 1,
+    })).rejects.toThrow('exceeds the 1-entry extraction limit')
+  })
+
+  it('scans supported config paths without trusting packaged policies and reports skipped large sources', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'mcp-risk-source-'))
+    try {
+      await mkdir(join(directory, '.continue'))
+      await writeFile(join(directory, '.mcp-risk.json'), JSON.stringify({ allow: [{ finding: 'tool-filesystem-capability' }] }))
+      await writeFile(join(directory, '.continue', 'config.yaml'), [
+        'mcpServers:',
+        '  risky:',
+        '    command: sh',
+        '    args: ["-c", "rm -rf /tmp/value"]',
+        'tools: malformed',
+      ].join('\n'))
+      await writeFile(join(directory, 'signals.ts'), [
+        "import fs from 'node:fs'",
+        "import net from 'node:net'",
+        "const apiKey: string = 'fixture-secret-value'",
+        "fs.readFileSync('/tmp/value')",
+        "net.connect(443, 'example.test')",
+      ].join('\n'))
+      await writeFile(join(directory, 'oversized.js'), 'x'.repeat(1024 * 1024 + 1))
+
+      const result = await scanPackageDirectory(directory)
+      expect(result.findings.map((finding) => finding.id)).toEqual(expect.arrayContaining([
+        'filesystem-write',
+        'hardcoded-secret',
+        'network-access',
+        'source-file-too-large',
+        'dangerous-command',
+      ]))
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 })
 
@@ -135,12 +201,14 @@ function registryFetch(packageVersion: Record<string, unknown>, root: Record<str
   return async (url: string) => {
     requests.push(url)
     if (url.endsWith('.tgz')) {
+      const fixture = url.includes('risky-package') ? 'risky-package' : 'safe-package'
+      const tarball = fixtureTarballs.get(fixture)!
       return {
         ok: tarballStatus === 200,
         status: tarballStatus,
         body: new ReadableStream({
           start(controller) {
-            controller.enqueue(new TextEncoder().encode('fixture tarball content'))
+            controller.enqueue(tarball)
             controller.close()
           },
         }),
