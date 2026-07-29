@@ -91,6 +91,15 @@ mcp-risk verify npm:@scope/example-mcp@1.2.3 --format markdown
 
 Verification resolves and downloads the selected tarball to temporary storage, reports its SHA-256 digest, and statically scans included JavaScript, TypeScript, manifests, and MCP configs for shell, network, filesystem, and secret risks. Temporary files are removed without executing package code or lifecycle scripts.
 
+Verify a GitHub branch, tag, or commit. The requested ref is resolved to an exact commit before its archive is scanned:
+
+```bash
+mcp-risk verify github:owner/repository@v1.2.3
+mcp-risk verify github:owner/repository@0123456789abcdef0123456789abcdef01234567 --sarif
+```
+
+Set `GITHUB_TOKEN` when verifying private repositories or to increase GitHub API rate limits.
+
 Project config discovery supports `mcp.json`, `.mcp.json`, `.cursor/mcp.json`, `.claude/mcp.json`, `.vscode/mcp.json`, `.windsurf/mcp.json`, and Continue/Cline project config paths. User discovery recognizes Claude Desktop, Cursor, Claude Code, Continue, Windsurf, VS Code, and Cline locations on macOS, Linux, and Windows.
 
 Supported configs are JSON or YAML objects with `mcpServers`, `servers`, or root-level `tools`. `mcp-risk` reports malformed files and unsupported shapes instead of treating them as clean scans.

@@ -3,7 +3,7 @@ import { extname, join, relative } from 'node:path'
 import YAML from 'yaml'
 import { auditConfig } from '../audit.js'
 import { ConfigError } from '../parse.js'
-import type { Finding } from '../types.js'
+import type { Finding, PackageManifestSummary } from '../types.js'
 
 const sourceExtensions = new Set(['.js', '.cjs', '.mjs', '.jsx', '.ts', '.tsx'])
 const configPaths = [
@@ -67,10 +67,12 @@ const sourceRules: Array<{
 export type SourceScanResult = {
   findings: Finding[]
   scannedFiles: number
+  manifests: PackageManifestSummary[]
 }
 
 export async function scanPackageDirectory(root: string): Promise<SourceScanResult> {
   const findings: Finding[] = []
+  const manifests: PackageManifestSummary[] = []
   let scannedFiles = 0
 
   for (const path of await walkFiles(root)) {
@@ -132,6 +134,18 @@ export async function scanPackageDirectory(root: string): Promise<SourceScanResu
       scannedFiles += 1
       try {
         const manifest = JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>
+        const summary = summarizeManifest(manifest, packagePath)
+        manifests.push(summary)
+        for (const script of summary.installScripts) {
+          findings.push({
+            id: 'package-install-script',
+            severity: 'high',
+            title: 'Package manifest defines an install lifecycle script',
+            message: `"${packagePath}" defines "${script}", which can execute during installation.`,
+            location: `${packagePath}:scripts.${script}`,
+            recommendation: 'Review the lifecycle script source before installation or install with scripts disabled.',
+          })
+        }
         for (const key of ['mcpServers', 'servers', 'tools']) {
           if (manifest[key] === undefined) continue
           try {
@@ -150,7 +164,20 @@ export async function scanPackageDirectory(root: string): Promise<SourceScanResu
     }
   }
 
-  return { findings, scannedFiles }
+  return { findings, scannedFiles, manifests }
+}
+
+function summarizeManifest(manifest: Record<string, unknown>, path: string): PackageManifestSummary {
+  const dependencyNames = ['dependencies', 'optionalDependencies', 'peerDependencies', 'devDependencies']
+    .flatMap((key) => isRecord(manifest[key]) ? Object.keys(manifest[key]) : [])
+  const scripts = isRecord(manifest.scripts) ? manifest.scripts : {}
+  return {
+    path,
+    ...(typeof manifest.name === 'string' ? { name: manifest.name } : {}),
+    ...(typeof manifest.version === 'string' ? { version: manifest.version } : {}),
+    dependencies: [...new Set(dependencyNames)].sort(),
+    installScripts: ['preinstall', 'install', 'postinstall'].filter((name) => typeof scripts[name] === 'string'),
+  }
 }
 
 function isConfigPath(packagePath: string): boolean {

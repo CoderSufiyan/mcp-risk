@@ -97,6 +97,38 @@ export type NpmVerificationResult = {
   findings: Finding[]
 }
 
+export type PackageManifestSummary = {
+  path: string
+  name?: string
+  version?: string
+  dependencies: string[]
+  installScripts: string[]
+}
+
+export type GitHubVerificationResult = {
+  target: string
+  kind: 'github'
+  repository: {
+    owner: string
+    name: string
+    url: string
+    ref: string
+    commit: string
+  }
+  metadata: {
+    archiveUrl: string
+    archiveDigest: {
+      algorithm: 'sha256'
+      value: string
+    }
+    archiveSizeBytes: number
+    sourceFileCount: number
+    manifests: PackageManifestSummary[]
+  }
+  summary: AuditSummary
+  findings: Finding[]
+}
+
 export type RiskPolicyAllowEntry = {
   server?: string
   finding?: string

@@ -66,6 +66,7 @@ describe('npm package verification', () => {
     })
 
     expect(result.findings.map((finding) => finding.id)).toContain('npm-install-script')
+    expect(result.findings.filter((finding) => finding.id.endsWith('install-script'))).toHaveLength(1)
     expect(result.findings.map((finding) => finding.id)).toContain('dangerous-command')
     expect(result.findings.map((finding) => finding.id)).toEqual(expect.arrayContaining([
       'filesystem-write',
@@ -79,6 +80,15 @@ describe('npm package verification', () => {
     expect(markdown).toContain(result.metadata.tarballDigest!.value)
     expect(markdown).toContain('Static verification does not execute the package')
     expect(JSON.parse(JSON.stringify(result)).metadata.tarballDigest).toEqual(result.metadata.tarballDigest)
+  })
+
+  it('keeps tarball install-script findings when registry metadata omits them', async () => {
+    const packageJson = fixturePackage('risky-package')
+    delete packageJson.scripts
+    const result = await verifyNpmPackage('npm:fixture-risky-mcp@1.0.0', {
+      fetch: registryFetch(packageJson),
+    })
+    expect(result.findings).toContainEqual(expect.objectContaining({ id: 'package-install-script' }))
   })
 
   it('ignores unrelated malformed metadata fields and uses root maintainers', async () => {

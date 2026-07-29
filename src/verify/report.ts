@@ -1,4 +1,4 @@
-import type { NpmVerificationResult } from '../types.js'
+import type { GitHubVerificationResult, NpmVerificationResult } from '../types.js'
 
 export function formatVerificationText(result: NpmVerificationResult): string {
   const lines = [
@@ -75,6 +75,61 @@ export function formatVerificationMarkdown(result: NpmVerificationResult): strin
     lines.push(`### ${finding.severity.toUpperCase()}: ${markdown(finding.title)}`, '', `**Rule:** ${markdown(finding.id)}`, '', markdown(finding.message), '', `**Location:** ${markdown(finding.location)}`, '', `**Recommendation:** ${markdown(finding.recommendation)}`, '')
   }
   lines.push('> Static verification does not execute the package and is not a guarantee of safety.', '')
+  return lines.join('\n')
+}
+
+export function formatGitHubVerificationText(result: GitHubVerificationResult): string {
+  const lines = [
+    '',
+    'MCP GitHub Repository Verification',
+    `Repository: ${plain(result.repository.owner)}/${plain(result.repository.name)}`,
+    `Requested ref: ${plain(result.repository.ref)}`,
+    `Resolved commit: ${result.repository.commit}`,
+    `Score: ${result.summary.grade} (${result.summary.score}/100)`,
+    `Source files scanned: ${result.metadata.sourceFileCount}`,
+    `Manifests: ${result.metadata.manifests.length}`,
+    `Findings: ${result.findings.length}`,
+    '',
+  ]
+  for (const manifest of result.metadata.manifests) {
+    lines.push(`Manifest: ${plain(manifest.path)}`, `  Package: ${plain(manifest.name ?? 'unknown')}@${plain(manifest.version ?? 'unknown')}`, `  Dependencies: ${manifest.dependencies.map(plain).join(', ') || 'none'}`, `  Install scripts: ${manifest.installScripts.join(', ') || 'none'}`, '')
+  }
+  for (const finding of result.findings) {
+    lines.push(`${finding.severity.toUpperCase()} [${plain(finding.id)}] ${plain(finding.title)}`, `  ${plain(finding.location)}`, `  ${plain(finding.message)}`, `  Fix: ${plain(finding.recommendation)}`, '')
+  }
+  return lines.join('\n')
+}
+
+export function formatGitHubVerificationMarkdown(result: GitHubVerificationResult): string {
+  const lines = [
+    `# MCP Risk: ${markdown(result.repository.owner)}/${markdown(result.repository.name)}`,
+    '',
+    `**Requested ref:** ${markdown(result.repository.ref)}`,
+    '',
+    `**Resolved commit:** \`${result.repository.commit}\``,
+    '',
+    `**Grade:** ${result.summary.grade} (${result.summary.score}/100)`,
+    '',
+    '| Signal | Value |',
+    '|---|---|',
+    `| Repository | ${markdown(result.repository.url)} |`,
+    `| Source files scanned | ${result.metadata.sourceFileCount} |`,
+    `| Manifests | ${result.metadata.manifests.length} |`,
+    `| Archive SHA-256 | ${result.metadata.archiveDigest.value} |`,
+    '',
+    '## Manifests',
+    '',
+  ]
+  if (result.metadata.manifests.length === 0) lines.push('No package manifests found.', '')
+  for (const manifest of result.metadata.manifests) {
+    lines.push(`### ${markdown(manifest.path)}`, '', `- Package: ${markdown(manifest.name ?? 'unknown')}@${markdown(manifest.version ?? 'unknown')}`, `- Dependencies: ${markdown(manifest.dependencies.join(', ') || 'none')}`, `- Install scripts: ${markdown(manifest.installScripts.join(', ') || 'none')}`, '')
+  }
+  lines.push('## Findings', '')
+  if (result.findings.length === 0) lines.push('No risky static patterns found.', '')
+  for (const finding of result.findings) {
+    lines.push(`### ${finding.severity.toUpperCase()}: ${markdown(finding.title)}`, '', `**Rule:** ${markdown(finding.id)}`, '', markdown(finding.message), '', `**Location:** ${markdown(finding.location)}`, '', `**Recommendation:** ${markdown(finding.recommendation)}`, '')
+  }
+  lines.push('> Static verification does not execute repository code and is not a guarantee of safety.', '')
   return lines.join('\n')
 }
 

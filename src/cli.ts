@@ -5,8 +5,9 @@ import { ConfigError } from './parse.js'
 import { formatTextReport, formatTextReports } from './report.js'
 import { formatSarifReport, formatSarifReports } from './sarif.js'
 import type { Severity } from './types.js'
+import { verifyGitHubRepository } from './verify/github.js'
 import { verifyNpmPackage } from './verify/npm.js'
-import { formatVerificationMarkdown, formatVerificationText } from './verify/report.js'
+import { formatGitHubVerificationMarkdown, formatGitHubVerificationText, formatVerificationMarkdown, formatVerificationText } from './verify/report.js'
 
 const severityOrder: Record<Severity, number> = {
   low: 1,
@@ -72,19 +73,22 @@ program
 
 program
   .command('verify')
-  .argument('<target>', 'Exact npm package target, for example npm:package@1.2.3')
+  .argument('<target>', 'Pinned npm or GitHub target')
   .option('--json', 'Print JSON output')
-  .option('--format <format>', 'Output format: text, json, markdown', 'text')
+  .option('--sarif', 'Print SARIF JSON output')
+  .option('--format <format>', 'Output format: text, json, markdown, sarif', 'text')
   .option('--fail-on <severity>', 'Exit with code 1 when severity is found: low, medium, high, critical')
-  .action(async (target: string, options: { json?: boolean; format: string; failOn?: Severity }) => {
+  .action(async (target: string, options: { json?: boolean; sarif?: boolean; format: string; failOn?: Severity }) => {
     try {
-      const format = options.json ? 'json' : options.format
-      if (!['text', 'json', 'markdown'].includes(format)) throw new Error('Verify format must be text, json, or markdown')
+      if (options.json && options.sarif) throw new Error('Use either --json or --sarif, not both')
+      const format = options.json ? 'json' : options.sarif ? 'sarif' : options.format
+      if (!['text', 'json', 'markdown', 'sarif'].includes(format)) throw new Error('Verify format must be text, json, markdown, or sarif')
       if (options.failOn && !(options.failOn in severityOrder)) throw new Error('Fail severity must be low, medium, high, or critical')
-      const result = await verifyNpmPackage(target)
+      const result = target.startsWith('npm:') ? await verifyNpmPackage(target) : await verifyGitHubRepository(target)
       if (format === 'json') process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
-      if (format === 'markdown') process.stdout.write(formatVerificationMarkdown(result))
-      if (format === 'text') process.stdout.write(formatVerificationText(result))
+      if (format === 'sarif') process.stdout.write(`${JSON.stringify(formatSarifReport(result), null, 2)}\n`)
+      if (format === 'markdown') process.stdout.write(result.kind === 'npm' ? formatVerificationMarkdown(result) : formatGitHubVerificationMarkdown(result))
+      if (format === 'text') process.stdout.write(result.kind === 'npm' ? formatVerificationText(result) : formatGitHubVerificationText(result))
 
       if (options.failOn && shouldFail(result.findings.map((finding) => finding.severity), options.failOn)) {
         process.exitCode = 1
