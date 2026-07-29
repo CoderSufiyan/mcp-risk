@@ -77,6 +77,11 @@ export type NpmVerificationMetadata = {
   license?: string
   repository?: string
   tarball?: string
+  tarballDigest?: {
+    algorithm: 'sha256'
+    value: string
+  }
+  tarballSizeBytes?: number
 }
 
 export type NpmVerificationResult = {

@@ -14,6 +14,8 @@ export function formatVerificationText(result: NpmVerificationResult): string {
     `License: ${plain(result.metadata.license ?? 'unknown')}`,
     `Repository: ${plain(result.metadata.repository ?? 'unknown')}`,
     `Tarball: ${plain(result.metadata.tarball ?? 'unknown')}`,
+    `SHA-256: ${result.metadata.tarballDigest?.value ?? 'unknown'}`,
+    `Tarball size: ${result.metadata.tarballSizeBytes ?? 'unknown'} bytes`,
     `Findings: ${result.findings.length}`,
     '',
   ]
@@ -48,6 +50,8 @@ export function formatVerificationMarkdown(result: NpmVerificationResult): strin
     `| License | ${markdown(result.metadata.license ?? 'unknown')} |`,
     `| Repository | ${markdown(result.metadata.repository ?? 'unknown')} |`,
     `| Tarball | ${markdown(result.metadata.tarball ?? 'unknown')} |`,
+    `| SHA-256 | ${result.metadata.tarballDigest?.value ?? 'unknown'} |`,
+    `| Tarball size | ${result.metadata.tarballSizeBytes ?? 'unknown'} bytes |`,
     '',
     '## Dependencies',
     '',
