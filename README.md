@@ -104,6 +104,10 @@ mcp-risk verify npm:example-mcp@1.2.3 --fail-on high
 
 Verification resolves and downloads the selected tarball to temporary storage, reports its SHA-256 digest, and statically scans included JavaScript, TypeScript, manifests, and MCP configs for shell, network, filesystem, and secret risks. Temporary files are removed without executing package code or lifecycle scripts.
 
+See [Verification guarantees and limitations](docs/verification.md) for the
+static-only security boundary, network requests, cleanup behavior, and what a
+clean result cannot prove.
+
 Verify a GitHub branch, tag, or commit. The requested ref is resolved to an exact commit before its archive is scanned:
 
 ```bash
