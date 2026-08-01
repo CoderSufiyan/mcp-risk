@@ -159,7 +159,10 @@ JSON output:
 
 ```bash
 mcp-risk scan . --json
+mcp-risk verify npm:example-mcp@1.2.3 --json
 ```
+
+Verification JSON follows the versioned [verification report schema](docs/verification-report.md), including immutable artifact identity, digest, scanner version, timestamp, policy status, score, and deterministically ordered findings.
 
 SARIF output for GitHub Code Scanning:
 

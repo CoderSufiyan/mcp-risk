@@ -129,6 +129,95 @@ export type GitHubVerificationResult = {
   findings: Finding[]
 }
 
+export type VerificationPolicyViolation = {
+  id: string
+  message: string
+}
+
+export type VerificationPolicyResult = {
+  status: 'not-configured' | 'passed' | 'failed'
+  name?: string
+  violations: VerificationPolicyViolation[]
+}
+
+export type VerificationReportBase = {
+  schemaVersion: '1.0.0'
+  generatedAt: string
+  scanner: {
+    name: 'mcp-risk'
+    version: string
+  }
+  target: string
+  policy: VerificationPolicyResult
+  summary: AuditSummary
+  findings: Finding[]
+}
+
+export type VerificationReportDependency = {
+  name: string
+  specifier?: string
+  type: 'dependency' | 'optional' | 'peer' | 'bundled'
+}
+
+export type VerificationReportManifest = {
+  path: string
+  name?: string
+  version?: string
+  dependencies: string[]
+  installScripts: string[]
+}
+
+export type NpmVerificationReport = VerificationReportBase & {
+  artifact: {
+    kind: 'npm'
+    name: string
+    version: string
+    tarballUrl: string
+    digest: {
+      algorithm: 'sha256'
+      value: string
+    }
+  }
+  metadata: {
+    publishedAt?: string
+    createdAt?: string
+    maintainers: string[]
+    dependencies: VerificationReportDependency[]
+    installScripts: string[]
+    license?: string
+    repository?: string
+    tarballSizeBytes: number
+    sourceFileCount: number
+  }
+}
+
+export type GitHubVerificationReport = VerificationReportBase & {
+  artifact: {
+    kind: 'github'
+    owner: string
+    repository: string
+    repositoryUrl: string
+    requestedRef: string
+    commit: string
+    digest: {
+      algorithm: 'git-sha1'
+      value: string
+    }
+  }
+  metadata: {
+    archiveUrl: string
+    archiveDigest: {
+      algorithm: 'sha256'
+      value: string
+    }
+    archiveSizeBytes: number
+    sourceFileCount: number
+    manifests: VerificationReportManifest[]
+  }
+}
+
+export type VerificationReport = NpmVerificationReport | GitHubVerificationReport
+
 export type RiskPolicyAllowEntry = {
   server?: string
   finding?: string
